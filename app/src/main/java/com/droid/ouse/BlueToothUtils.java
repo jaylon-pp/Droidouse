@@ -203,4 +203,41 @@ public class BlueToothUtils {
             });
         }
     }
+
+    static String getStateName(int state) {
+        switch (state) {
+            case BluetoothProfile.STATE_DISCONNECTED:
+                return "DISCONNECTED";
+            case BluetoothProfile.STATE_CONNECTING:
+                return "CONNECTING";
+            case BluetoothProfile.STATE_CONNECTED:
+                return "CONNECTED";
+            case BluetoothProfile.STATE_DISCONNECTING:
+                return "DISCONNECTING";
+            default:
+                return "UNKNOWN";
+        }
+    }
+
+    /**
+     * Convert an integer value of profile ID into human readable string
+     *
+     * @param type profile ID
+     * @return profile name as String, UNKOWN_PROFILE if the profile ID is not defined.
+     * @hide
+     */
+    static public String getTypeName(int type) {
+        switch(type) {
+            case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+                return "CLASSIC";
+            case BluetoothDevice.DEVICE_TYPE_LE:
+                return "LE";
+            case BluetoothDevice.DEVICE_TYPE_DUAL:
+                return "DUAL";
+            case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
+                return "UNKNOWN";
+            default:
+                return String.format("*UNKNOWN(%d)", type);
+        }
+    }
 }

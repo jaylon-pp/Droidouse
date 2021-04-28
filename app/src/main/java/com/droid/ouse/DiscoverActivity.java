@@ -2,6 +2,7 @@ package com.droid.ouse;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -22,10 +23,12 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.droid.ouse.utils.LogUtils;
+import com.droid.ouse.widgets.SimpleBDView;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -57,7 +60,6 @@ public class DiscoverActivity extends AppCompatActivity {
                 }
             }
         });
-
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         bondedDeviceList = findViewById(R.id.bonded_devices);
@@ -66,10 +68,10 @@ public class DiscoverActivity extends AppCompatActivity {
         bondedDeviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                LogUtils.d( "position: " + position);
-//                Intent intent = new Intent(DiscoverActivity.this, BondActivity.class);
-//                intent.putExtra("device", items.get(position));
-//                startActivity(intent);
+                Intent intent = new Intent(DiscoverActivity.this, ConnectActivity.class);
+                LogUtils.d( "position: " + position);
+                intent.putExtra("bluetoothDevice", bondDeviceAdapter.getItem(position));
+                startActivity(intent);
             }
         });
 
@@ -79,7 +81,10 @@ public class DiscoverActivity extends AppCompatActivity {
         discoveredDeviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
+                Intent intent = new Intent(DiscoverActivity.this, ConnectActivity.class);
+                LogUtils.d( "position: " + position);
+                intent.putExtra("bluetoothDevice", discoveredDeviceAdapter.getItem(position));
+                startActivity(intent);
             }
         });
     }
@@ -116,10 +121,12 @@ public class DiscoverActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         unregisterReceiver(searchDevices);
+        bluetoothAdapter.cancelDiscovery();
     }
 
 
     private BroadcastReceiver searchDevices = new BroadcastReceiver() {
+        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             LogUtils.d( "action: " + action);
@@ -129,6 +136,9 @@ public class DiscoverActivity extends AppCompatActivity {
                 String str = device.getName() + "|" + device.getAddress();
                 LogUtils.d( "scanned device:"+str);
                 discoveredDeviceAdapter.add(device);
+
+                LogUtils.d("getMajorDeviceClass: %d deviceClass: %d type: %d", device.getBluetoothClass().getMajorDeviceClass(), device.getBluetoothClass().getDeviceClass(), device.getType());
+                LogUtils.d("deviceType: %s", BlueToothUtils.getTypeName(device.getType()));
 //                List list = new ArrayList();
 //                //如果List中没有str元素则返回-1
 //                if (list.indexOf(str) == -1)// 防止重复添加
@@ -181,35 +191,44 @@ public class DiscoverActivity extends AppCompatActivity {
         @NonNull
         @Override
         public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-//        View view =  super.getView(position, convertView, parent);
-            View view = LayoutInflater.from(getContext()).inflate(R.layout.layout_device_item, parent, false);
-            TextView name  = view.findViewById(R.id.device_name);
-            TextView mac = view.findViewById(R.id.device_mac);
-            name.setText(items.get(position).getName());
-            mac.setText(items.get(position).getAddress());
-
-            TextView state = view.findViewById(R.id.device_state);
-            switch (items.get(position).getBondState()) {
-                case BluetoothDevice.BOND_BONDED:
-                    state.setText("BONDED");
-                    break;
-                case BluetoothDevice.BOND_BONDING:
-                    state.setText("BONDING");
-                    break;
-                case BluetoothDevice.BOND_NONE:
-                    state.setText("NONE");
-                    break;
-                default:
-                    state.setText("UNKNOWN");
-                    break;
-            }
-
+            SimpleBDView view = new SimpleBDView(getContext());
+            view.setBluetoothDevice(items.get(position));
             return view;
+//            View view = LayoutInflater.from(getContext()).inflate(R.layout.layout_device_item, parent, false);
+//            TextView name  = view.findViewById(R.id.device_name);
+//            TextView mac = view.findViewById(R.id.device_mac);
+//            name.setText(items.get(position).getName());
+//            mac.setText(items.get(position).getAddress());
+//
+//            TextView state = view.findViewById(R.id.device_state);
+//            switch (items.get(position).getBondState()) {
+//                case BluetoothDevice.BOND_BONDED:
+//                    state.setText("BONDED");
+//                    break;
+//                case BluetoothDevice.BOND_BONDING:
+//                    state.setText("BONDING");
+//                    break;
+//                case BluetoothDevice.BOND_NONE:
+//                    state.setText("NONE");
+//                    break;
+//                default:
+//                    state.setText("UNKNOWN");
+//                    break;
+//            }
+//
+//            return view;
         }
 
         @Override
         public int getCount() {
             return items.size();
+        }
+
+        @Nullable
+        @Override
+        public BluetoothDevice getItem(int position) {
+//            return super.getItem(position);
+            return items.get(position);
         }
     }
 }
