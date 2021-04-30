@@ -240,4 +240,17 @@ public class BlueToothUtils {
                 return String.format("*UNKNOWN(%d)", type);
         }
     }
+
+    static public String getBondState(int state) {
+        switch(state) {
+            case BluetoothDevice.BOND_BONDED:
+                return "BONDED";
+            case BluetoothDevice.BOND_BONDING:
+                return "BONDING";
+            case BluetoothDevice.BOND_NONE:
+                return "NONE";
+            default:
+                return String.format("UNKNOWN(%d)", state);
+        }
+    }
 }

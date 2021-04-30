@@ -33,15 +33,17 @@ import com.droid.ouse.widgets.SimpleBDView;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public class ConnectActivity extends AppCompatActivity {
 
     private BluetoothDevice bluetoothDevice;
-//    private TextView deviceName;
-//    private TextView deviceMac;
-//    private TextView deviceState;
 
     private Button btnBond;
     private Button btnUnbound;
@@ -50,6 +52,8 @@ public class ConnectActivity extends AppCompatActivity {
 
     private SimpleBDView simpleBDView;
     private ListView deviceProps;
+    Set<PropValue> devicPropDatas = Collections.synchronizedSet(new TreeSet<>());
+    DevicePropAdapter devicePropAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,61 +63,33 @@ public class ConnectActivity extends AppCompatActivity {
         Intent getIntent = getIntent();
         Bundle bundle = getIntent.getExtras();
         bluetoothDevice = (BluetoothDevice) bundle.get("bluetoothDevice");
-
-//        deviceName = findViewById(R.id.device_name);
-//        deviceMac = findViewById(R.id.device_mac);
-//        deviceState = findViewById(R.id.device_state);
-//        deviceState.setTextColor(Color.RED);
-//
         simpleBDView = findViewById(R.id.simple_bt_view);
         simpleBDView.setBluetoothDevice(bluetoothDevice);
-//
-//        if(null != bluetoothDevice) {
-//            deviceName.setText(bluetoothDevice.getName());
-//            deviceMac.setText(bluetoothDevice.getAddress());
-//            switch (bluetoothDevice.getBondState()) {
-//                case BluetoothDevice.BOND_BONDED:
-//                    deviceState.setText("Bonded");
-//                    break;
-//                case BluetoothDevice.BOND_BONDING:
-//                    deviceState.setText("Bonding");
-//                    break;
-//                case BluetoothDevice.BOND_NONE:
-//                    deviceState.setText("None");
-//                    break;
-//                default:
-//                    deviceState.setText("Unknown");
-//            }
-//        }
-//        deviceName = findViewById(R.id.device_name);
-//        deviceMac = findViewById(R.id.device_mac);
-//        btnBond = findViewById(R.id.btn_bond);
-//        btnUnbond = findViewById(R.id.btn_unbond);
-//
-//        deviceName.setText(device.getName());
-//        deviceMac.setText(device.getAddress());
-
-        List<Pair<String, String>> datas = new ArrayList<>();
+        
         try {
-            datas.add(new Pair<>("name", bluetoothDevice.getName()));
-            datas.add(new Pair<>("mac", bluetoothDevice.getAddress()));
+            devicPropDatas.add(new PropValue("name", bluetoothDevice.getName()));
+            devicPropDatas.add(new PropValue("mac", bluetoothDevice.getAddress()));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                datas.add(new Pair<>("type", String.valueOf(BlueToothUtils.getTypeName(bluetoothDevice.getType()))));
+                devicPropDatas.add(new PropValue("type", String.valueOf(BlueToothUtils.getTypeName(bluetoothDevice.getType()))));
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                datas.add(new Pair<>("alias", bluetoothDevice.getAlias()));
+                devicPropDatas.add(new PropValue("alias", bluetoothDevice.getAlias()));
             }
-            datas.add(new Pair<>("uuidsWithSdp", String.valueOf(bluetoothDevice.fetchUuidsWithSdp())));
-            datas.add(new Pair<>("btClass", bluetoothDevice.getBluetoothClass().toString()));
-            datas.add(new Pair<>("bondState", String.valueOf(bluetoothDevice.getBondState())));
-            datas.add(new Pair<>("uuid", bluetoothDevice.getUuids().toString()));
-            datas.add(new Pair<>("describeContents", String.valueOf(bluetoothDevice.describeContents())));
+            devicPropDatas.add(new PropValue("uuidsWithSdp", String.valueOf(bluetoothDevice.fetchUuidsWithSdp())));
+            if(null != bluetoothDevice.getBluetoothClass()) {
+                devicPropDatas.add(new PropValue("btClass", "0x" + bluetoothDevice.getBluetoothClass().toString()));
+                BluetoothClass bluetoothClass = bluetoothDevice.getBluetoothClass();
+                devicPropDatas.add(new PropValue("majorClass", "0x" + Integer.toHexString(bluetoothClass.getMajorDeviceClass())));
+                devicPropDatas.add(new PropValue("deviceClass", "0x" + Integer.toHexString(bluetoothClass.getDeviceClass())));
+            }
+            devicPropDatas.add(new PropValue("bondState", BlueToothUtils.getBondState(bluetoothDevice.getBondState())));
+            devicPropDatas.add(new PropValue("describeContents", String.valueOf(bluetoothDevice.describeContents())));
         } catch (Exception e) {
             LogUtils.e("", e);
         }
 
         deviceProps = findViewById(R.id.device_props);
-        DevicePropAdapter devicePropAdapter = new DevicePropAdapter(this, R.layout.layout_device_item, datas);
+        devicePropAdapter = new DevicePropAdapter(this, R.layout.layout_device_item, new ArrayList<>(devicPropDatas));
         deviceProps.setAdapter(devicePropAdapter);
 
         btnBond = findViewById(R.id.btn_bond);
@@ -121,9 +97,13 @@ public class ConnectActivity extends AppCompatActivity {
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
             public void onClick(View v) {
-                if(!bluetoothDevice.createBond()) {
-                    ToastUtils.showShort("bond failed");
+                boolean result = bluetoothDevice.fetchUuidsWithSdp();
+                if(!result) {
+                    ToastUtils.showShort("fetchUuidsWithSdp failed");
                 }
+//                if(!bluetoothDevice.createBond()) {
+//                    ToastUtils.showShort("bond failed");
+//                }
             }
         });
 
@@ -236,13 +216,26 @@ public class ConnectActivity extends AppCompatActivity {
             if(BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(intent.getAction())) {
                 int state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
                 if(state == BluetoothDevice.BOND_BONDED) {
-
 //                    try {
 //                        mBluetoothSocket = bluetoothDevice.createInsecureRfcommSocketToServiceRecord(MY_UUID);
 //                        mBluetoothSocket.connect();
 //                    } catch (IOException e) {
 //                        e.printStackTrace();
 //                    }
+                }
+            } else if(BluetoothDevice.ACTION_UUID.equals(intent.getAction())) {
+                if(bluetoothDevice.getUuids() != null) {
+                    LogUtils.d("uuid length: %d", bluetoothDevice.getUuids().length);
+                    if(bluetoothDevice.getUuids() != null) {
+                        for(int i = 0; i < bluetoothDevice.getUuids().length; i++) {
+                            PropValue propValue = new PropValue(String.format("uuid:%d", i), bluetoothDevice.getUuids()[i].getUuid().toString());
+                            boolean re = devicPropDatas.add(propValue);
+                            LogUtils.d("re: %b", re);
+                        }
+                    }
+                    devicePropAdapter.setItems(new ArrayList<>(devicPropDatas));
+                } else {
+                    LogUtils.d("uuid is null");
                 }
             }
         }
@@ -252,12 +245,12 @@ public class ConnectActivity extends AppCompatActivity {
     private BluetoothSocket mBluetoothSocket;
 
 
-    class DevicePropAdapter extends ArrayAdapter<Pair<String, String>> {
+    class DevicePropAdapter extends ArrayAdapter<PropValue> {
 
-        private List<Pair<String, String>> items;
+        private List<PropValue> items;
 
 
-        public DevicePropAdapter(@NonNull Context context, int resource, @NonNull List<Pair<String, String>> objects) {
+        public DevicePropAdapter(@NonNull Context context, int resource, @NonNull List<PropValue> objects) {
             super(context, resource, objects);
             items = objects;
             if(null == items) {
@@ -265,8 +258,13 @@ public class ConnectActivity extends AppCompatActivity {
             }
         }
 
+        public void setItems(List<PropValue> items) {
+            this.items = items;
+            notifyDataSetChanged();
+        }
+
         @Override
-        public void add(@Nullable Pair<String, String> object) {
+        public void add(@Nullable PropValue object) {
             items.add(object);
             notifyDataSetChanged();
         }
@@ -283,8 +281,8 @@ public class ConnectActivity extends AppCompatActivity {
             View view = LayoutInflater.from(getContext()).inflate(R.layout.layout_key, parent, false);
             TextView key  = view.findViewById(R.id.tv_key);
             TextView value = view.findViewById(R.id.tv_value);
-            key.setText(items.get(position).first);
-            value.setText(items.get(position).second);
+            key.setText(items.get(position).key);
+            value.setText(items.get(position).value);
             return view;
         }
 
@@ -295,9 +293,36 @@ public class ConnectActivity extends AppCompatActivity {
 
         @Nullable
         @Override
-        public Pair<String, String> getItem(int position) {
+        public PropValue getItem(int position) {
 //            return super.getItem(position);
             return items.get(position);
+        }
+    }
+
+    class PropValue implements Comparable<PropValue>{
+        long timestamp;
+        String key;
+        String value;
+
+        public PropValue(String key, String value) {
+            this.key = key;
+            this.value = value;
+            timestamp = System.currentTimeMillis();
+        }
+
+        @Override
+        public int compareTo(PropValue o) {
+            int re = key.compareTo(o.key);
+            if(re == 0) {
+                re = value.compareTo(o.value);
+            }
+            return re;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return String.format("*%s-%s*", key, value);
         }
     }
 }
