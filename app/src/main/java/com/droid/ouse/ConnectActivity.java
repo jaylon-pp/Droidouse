@@ -52,7 +52,7 @@ public class ConnectActivity extends AppCompatActivity {
 
     private SimpleBDView simpleBDView;
     private ListView deviceProps;
-    Set<PropValue> devicPropDatas = Collections.synchronizedSet(new TreeSet<>());
+    Set<PropValue> devicePropDatas = Collections.synchronizedSet(new TreeSet<>());
     DevicePropAdapter devicePropAdapter;
 
     @Override
@@ -67,29 +67,29 @@ public class ConnectActivity extends AppCompatActivity {
         simpleBDView.setBluetoothDevice(bluetoothDevice);
         
         try {
-            devicPropDatas.add(new PropValue("name", bluetoothDevice.getName()));
-            devicPropDatas.add(new PropValue("mac", bluetoothDevice.getAddress()));
+            devicePropDatas.add(new PropValue("name", bluetoothDevice.getName()));
+            devicePropDatas.add(new PropValue("mac", bluetoothDevice.getAddress()));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                devicPropDatas.add(new PropValue("type", String.valueOf(BlueToothUtils.getTypeName(bluetoothDevice.getType()))));
+                devicePropDatas.add(new PropValue("type", String.valueOf(BlueToothUtils.getTypeName(bluetoothDevice.getType()))));
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                devicPropDatas.add(new PropValue("alias", bluetoothDevice.getAlias()));
+                devicePropDatas.add(new PropValue("alias", bluetoothDevice.getAlias()));
             }
-            devicPropDatas.add(new PropValue("uuidsWithSdp", String.valueOf(bluetoothDevice.fetchUuidsWithSdp())));
+            devicePropDatas.add(new PropValue("uuidsWithSdp", String.valueOf(bluetoothDevice.fetchUuidsWithSdp())));
             if(null != bluetoothDevice.getBluetoothClass()) {
-                devicPropDatas.add(new PropValue("btClass", "0x" + bluetoothDevice.getBluetoothClass().toString()));
+                devicePropDatas.add(new PropValue("btClass", "0x" + bluetoothDevice.getBluetoothClass().toString()));
                 BluetoothClass bluetoothClass = bluetoothDevice.getBluetoothClass();
-                devicPropDatas.add(new PropValue("majorClass", "0x" + Integer.toHexString(bluetoothClass.getMajorDeviceClass())));
-                devicPropDatas.add(new PropValue("deviceClass", "0x" + Integer.toHexString(bluetoothClass.getDeviceClass())));
+                devicePropDatas.add(new PropValue("majorClass", "0x" + Integer.toHexString(bluetoothClass.getMajorDeviceClass())));
+                devicePropDatas.add(new PropValue("deviceClass", "0x" + Integer.toHexString(bluetoothClass.getDeviceClass())));
             }
-            devicPropDatas.add(new PropValue("bondState", BlueToothUtils.getBondState(bluetoothDevice.getBondState())));
-            devicPropDatas.add(new PropValue("describeContents", String.valueOf(bluetoothDevice.describeContents())));
+            devicePropDatas.add(new PropValue("bondState", BlueToothUtils.getBondState(bluetoothDevice.getBondState())));
+            devicePropDatas.add(new PropValue("describeContents", String.valueOf(bluetoothDevice.describeContents())));
         } catch (Exception e) {
             LogUtils.e("", e);
         }
 
         deviceProps = findViewById(R.id.device_props);
-        devicePropAdapter = new DevicePropAdapter(this, R.layout.layout_device_item, new ArrayList<>(devicPropDatas));
+        devicePropAdapter = new DevicePropAdapter(this, R.layout.layout_device_item, new ArrayList<>(devicePropDatas));
         deviceProps.setAdapter(devicePropAdapter);
 
         btnBond = findViewById(R.id.btn_bond);
@@ -229,11 +229,11 @@ public class ConnectActivity extends AppCompatActivity {
                     if(bluetoothDevice.getUuids() != null) {
                         for(int i = 0; i < bluetoothDevice.getUuids().length; i++) {
                             PropValue propValue = new PropValue(String.format("uuid:%d", i), bluetoothDevice.getUuids()[i].getUuid().toString());
-                            boolean re = devicPropDatas.add(propValue);
+                            boolean re = devicePropDatas.add(propValue);
                             LogUtils.d("re: %b", re);
                         }
                     }
-                    devicePropAdapter.setItems(new ArrayList<>(devicPropDatas));
+                    devicePropAdapter.setItems(new ArrayList<>(devicePropDatas));
                 } else {
                     LogUtils.d("uuid is null");
                 }

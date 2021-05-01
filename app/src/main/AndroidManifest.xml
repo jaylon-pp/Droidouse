@@ -15,7 +15,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Droidouse">
-        <activity android:name=".ConnectActivity"></activity>
+        <service
+            android:name=".BluetoothLeService"
+            android:enabled="true"
+            android:exported="true"></service>
+
+        <activity android:name=".ConnectBleActivity" />
+        <activity android:name=".ScanBleActivity" />
+        <activity android:name=".ConnectActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,7 +31,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".BondActivity" />
-        <activity android:name=".DiscoverActivity"></activity>
+        <activity android:name=".DiscoverActivity" />
         <activity android:name=".HomeActivity" />
         <activity android:name=".BondActivity" />
     </application>

@@ -59,6 +59,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.btn_scan_le).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, ScanBleActivity.class));
+            }
+        });
+
         IntentFilter intent = new IntentFilter();
 //        intent.addAction(BluetoothDevice.ACTION_FOUND); // 用BroadcastReceiver来取得搜索结果
 //        intent.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
